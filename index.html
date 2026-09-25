@@ -24,7 +24,7 @@ select{width:100%;padding:12px;border:1px solid #ddd3bd;border-radius:12px;backg
 .chart{width:100%;height:210px;display:block;background:linear-gradient(#fff,#fffdf8);border:1px solid #eee5cf;border-radius:13px;margin-top:8px}.legend{font-size:10px;color:var(--mut);text-align:center;margin-top:5px}
 .ko{border-left:5px solid var(--y);padding-left:11px}.koTitle{font-weight:1000;color:var(--g);font-size:13px}.quedas{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:6px}.q{background:#f4f0e6;border-radius:8px;padding:5px 7px;font-size:10px;font-weight:800}
 .teamCard{border:1px solid #eee3c7;border-radius:14px;padding:11px;margin:8px 0}.teamCard h3{margin:0;color:var(--g);font-size:14px}.teamCard p{margin:4px 0 0;color:var(--mut);font-size:11px}
-.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:grid;grid-template-columns:repeat(4,1fr);z-index:20;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -3px 16px #0002}.bottom button{border:0;background:#fff;padding:9px 2px 8px;font-size:9px;font-weight:900;color:#667}.bottom button span{display:block;font-size:20px;margin-bottom:2px}.bottom button.on{color:var(--g);background:#fff8d9}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:grid;grid-template-columns:repeat(5,1fr);z-index:20;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -3px 16px #0002}.bottom button{border:0;background:#fff;padding:9px 2px 8px;font-size:9px;font-weight:900;color:#667}.bottom button span{display:block;font-size:20px;margin-bottom:2px}.bottom button.on{color:var(--g);background:#fff8d9}
 .page{display:none}.page.on{display:block}.champ{background:linear-gradient(135deg,#145B18,#238B22);color:#fff;border-radius:16px;padding:15px;text-align:center;margin:9px 0}.champ b{display:block;color:var(--y);font-size:20px;margin-top:4px}
 @media(min-width:650px){.grid{grid-template-columns:repeat(4,1fr)}.kpis{grid-template-columns:repeat(6,1fr)}.title{font-size:22px}.bottom{left:50%;transform:translateX(-50%);max-width:820px;border-radius:16px 16px 0 0}}
 </style>
@@ -35,12 +35,14 @@ select{width:100%;padding:12px;border:1px solid #ddd3bd;border-radius:12px;backg
 <section id="p-stats" class="page"><div id="stats"></div></section>
 <section id="p-teams" class="page"><div id="teams"></div></section>
 <section id="p-ko" class="page"><div id="ko"></div></section>
+<section id="p-rules" class="page"><div id="rules"></div></section>
 </div>
 <nav class="bottom">
 <button class="on" data-p="camp"><span>🏆</span>CAMPEONATO</button>
 <button data-p="stats"><span>📊</span>ESTATÍSTICAS</button>
 <button data-p="teams"><span>👥</span>DUPLAS</button>
 <button data-p="ko"><span>🃏</span>MATA-MATA</button>
+<button data-p="rules"><span>📜</span>REGRAS</button>
 </nav>
 <script>
 const CONFIG={databaseURL:"https://sapo-cego-2026-default-rtdb.firebaseio.com",path:"campeonato/publico"};
@@ -81,11 +83,27 @@ function renderTeams(){
  const st=D.standings||[];
  document.querySelector("#teams").innerHTML=`<div class="card"><h2>👥 DUPLAS</h2>${(D.teams||[]).map(t=>{const s=teamStat(t.id);return `<div class="teamCard"><h3>${esc(t.name)}</h3>${t.p1||t.p2?`<p>${esc(t.p1)}${t.p1&&t.p2?" • ":""}${esc(t.p2)}</p>`:""}${s?`<div class="kpis" style="margin-top:8px"><div class="kpi"><b>${s.Pts}</b><small>PTS</small></div><div class="kpi"><b>${s.V}</b><small>V</small></div><div class="kpi"><b>${s.ST}</b><small>ST</small></div></div>`:"<p>Aguardando resultados oficiais.</p>"}</div>`}).join("")||'<div class="empty">Duplas ainda não publicadas.</div>'}</div>`;
 }
+
+function renderRules(){
+ document.querySelector("#rules").innerHTML=`
+ <div class="card"><h2>📜 REGRAS OFICIAIS • 2026</h2>
+ <div class="teamCard"><h3>🏆 FORMATO</h3><p><b>Grupo único • todos contra todos.</b> Cada CONFRONTO da primeira fase é uma QUEDA ÚNICA até 12 TENTOS. Vitória vale 3 pontos de classificação. Os 4 primeiros avançam.</p></div>
+ <div class="teamCard"><h3>📊 DESEMPATE</h3><p>Vitórias → saldo de QUEDAS (SQ) → QUEDAS ganhas (QG) → saldo de TENTOS (ST) → TENTOS feitos (TF) → TENTOS sofridos (menor) → confronto direto. Em empate de 3 ou mais duplas, aplica-se uma mini-classificação somente entre as empatadas, reaplicando os critérios. Persistindo empate absoluto, sorteio da organização registrado em Súmula.</p></div>
+ <div class="teamCard"><h3>🃏 MATA-MATA</h3><p>O 1º colocado geral escolhe seu adversário entre as outras 3 duplas classificadas. As 2 restantes formam a outra semifinal. Semifinais e Grande Final são em melhor de 3 QUEDAS. A Q3 só acontece se Q1 e Q2 terminarem 1 × 1. As duas semifinais começam juntas. Baralhos novos nas semifinais e na Grande Final.</p></div>
+ <div class="teamCard"><h3>⏰ HORÁRIO E ATRASO</h3><p>Até 14h30: participação normal. Após 14h30 e até 15h30: a dupla permanece no campeonato, mas inicia <b>todos os CONFRONTOS da primeira fase em 0 × 3 TENTOS</b>. Após 15h30: dupla eliminada. Substituição de jogador é permitida no dia; se a dupla só ficar completa após 14h30, aplica-se a mesma penalidade de 0 × 3 na primeira fase.</p></div>
+ <div class="teamCard"><h3>🎴 BARALHO E DISTRIBUIÇÃO</h3><p>Exatamente 3 cartas por jogador. Quantidade errada acidental: mão anulada e redistribuída, sem penalidade. Se houver intenção de obter vantagem: perda de 3 TENTOS. Roubar ou esconder cartas intencionalmente: eliminação. Embaralhar e cortar sempre sobre a mesa e à vista das duas duplas. O cortador indica subir/descer. A primeira carta é sempre dada ao adversário da direita.</p></div>
+ <div class="teamCard"><h3>🐸 SITUAÇÕES DE JOGO</h3><p>Se a primeira vaza melar, o jogador imediatamente à direita do pé deve mostrar a maior carta; se não mostrar, perde 1 TENTO. Se a primeira vaza melar e houver TRUCO na segunda, quem pediu é obrigado a matar. Na mão de 11: corte seco, baralho corrido e tombo na última. Não há “presente” nem escolha da carta virada. Pedir TRUCO na mão de 11 faz a dupla perder a QUEDA.</p></div>
+ <div class="teamCard"><h3>🚻 CONVIVÊNCIA E ORGANIZAÇÃO</h3><p>Ida ao banheiro é permitida a qualquer momento, permanecendo um parceiro na mesa; o jogo continua no retorno. Saída imprevista durante um CONFRONTO elimina a dupla. Brigas podem resultar em eliminação por decisão da organização. Organização: Lopes, Furlanetto, Luizão e Pedro.</p></div>
+ <div class="teamCard"><h3>📝 RESULTADOS</h3><p>Os TENTOS são marcados no papel da mesa. Ao final, um integrante de cada dupla confirma o resultado, que será lançado no sistema pela organização.</p></div>
+ <div class="teamCard" style="background:#fff8d9;border:2px solid #FFD21F"><h3>⭐ REGRA DE OURO</h3><p><b>O campeonato tem caráter de confraternização. Resenha, provocação e brincadeiras fazem parte do Truco, desde que respeitados os limites de convivência e as decisões da organização.</b></p></div>
+ </div>`;
+}
+
 function renderKO(){
  const arr=D.ko||[], champ=D.meta?.champion||"";
  document.querySelector("#ko").innerHTML=`${champ?`<div class="champ">🏆 CAMPEÃO 2026<b>${esc(champ)}</b></div>`:""}<div class="card"><h2>🃏 MATA-MATA</h2>${arr.length?arr.map(k=>`<div class="match ko"><div class="koTitle">${esc(k.stage)}</div><div class="teams"><b>${esc(k.aName)}</b><span class="score">${esc(k.score||"×")}</span><b>${esc(k.bName)}</b></div><div class="quedas">${(k.quedas||[]).filter(q=>q.a!==null||q.b!==null).map(q=>`<span class="q">Q${q.n}: ${q.a??"—"} × ${q.b??"—"}</span>`).join("")}</div></div>`).join(""):'<div class="empty">O mata-mata será exibido assim que as semifinais forem definidas.</div>'}</div>`;
 }
-function render(d){D=d||{teams:[],standings:[],matches:[],ko:[],meta:{}};document.querySelector("#updated").textContent=D.updatedAt?"Atualizado "+fmtTime(D.updatedAt):"Aguardando publicação";renderCamp();renderStats();renderTeams();renderKO()}
+function render(d){D=d||{teams:[],standings:[],matches:[],ko:[],meta:{}};document.querySelector("#updated").textContent=D.updatedAt?"Atualizado "+fmtTime(D.updatedAt):"Aguardando publicação";renderCamp();renderStats();renderTeams();renderKO();renderRules()}
 async function refresh(){try{const u=CONFIG.databaseURL.replace(/\/$/,"")+"/"+CONFIG.path+".json";const r=await fetch(u,{cache:"no-store"});if(r.ok)render(await r.json())}catch(e){document.querySelector("#updated").textContent="Sem conexão • tentando novamente"}}
 function startLive(){try{const u=CONFIG.databaseURL.replace(/\/$/,"")+"/"+CONFIG.path+".json";const es=new EventSource(u);["put","patch"].forEach(ev=>es.addEventListener(ev,()=>refresh()));es.onerror=()=>{};return es}catch(e){return null}}
 refresh();startLive();setInterval(refresh,15000);
