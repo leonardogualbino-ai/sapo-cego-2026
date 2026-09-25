@@ -32,7 +32,7 @@ footer{text-align:center;font-size:11px;color:#777;padding:8px 12px 24px}
 <section id="stats" hidden><div class="card"><h2>ESTATÍSTICAS</h2><div id="statsBody" class="empty">Aguardando resultados.</div></div></section>
 </main><footer>Consulta pública • somente leitura • Sapo Cego 2026</footer>
 <script>
-const CONFIG={databaseURL:"",path:"campeonato/publico"}; // Firebase será conectado na próxima etapa.
+const CONFIG={databaseURL:"https://sapo-cego-2026-default-rtdb.firebaseio.com",path:"campeonato/publico"};
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function showTab(t){live.hidden=t!=="live";stats.hidden=t!=="stats";btLive.classList.toggle("on",t==="live");btStats.classList.toggle("on",t==="stats")}
 function render(d){
