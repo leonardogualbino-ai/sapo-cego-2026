@@ -238,7 +238,39 @@ function renderKO(){
  document.querySelector("#ko").innerHTML=`${champ?`<div class="champ">🏆 CAMPEÃO 2026<b>${esc(champ)}</b></div>`:""}<div class="card"><h2>🃏 MATA-MATA • AO VIVO</h2>${arr.length?`${semis.length?`<div class="koSectionTitle">SEMIFINAIS</div>${semis.map(card).join('')}`:''}${fin?`<div class="koSectionTitle finalTitle">🏆 GRANDE FINAL</div>${card(fin)}`:'<div class="empty koFinalWait">A GRANDE FINAL aparecerá automaticamente após a definição das duas semifinalistas vencedoras.</div>'}`:'<div class="empty">O mata-mata será exibido assim que as semifinais forem definidas pela organização.</div>'}</div>`;
 }
 function render(d){D=d||{teams:[],standings:[],matches:[],ko:[],meta:{}};document.querySelector("#updated").textContent=D.updatedAt?"Atualizado "+fmtTime(D.updatedAt):"Aguardando publicação";renderCamp();renderStats();renderTeams();renderKO();renderRules()}
-async function refresh(){try{const u=CONFIG.databaseURL.replace(/\/$/,"")+"/"+CONFIG.path+".json";const r=await fetch(u,{cache:"no-store"});if(r.ok)render(await r.json())}catch(e){document.querySelector("#updated").textContent="Sem conexão • tentando novamente"}}
-function startLive(){try{const u=CONFIG.databaseURL.replace(/\/$/,"")+"/"+CONFIG.path+".json";const es=new EventSource(u);["put","patch"].forEach(ev=>es.addEventListener(ev,()=>refresh()));es.onerror=()=>{};return es}catch(e){return null}}
-refresh();startLive();setInterval(refresh,15000);
+let liveSource=null;
+let lastRefreshOk=0;
+let reconnectTimer=null;
+function liveLabel(msg){const el=document.querySelector("#updated");if(el)el.textContent=msg}
+async function refresh(){
+ try{
+  const u=CONFIG.databaseURL.replace(/\/$/,"")+"/"+CONFIG.path+".json?_="+Date.now();
+  const r=await fetch(u,{cache:"no-store",headers:{"Cache-Control":"no-cache"}});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  render(await r.json()); lastRefreshOk=Date.now(); return true;
+ }catch(e){liveLabel(navigator.onLine===false?"🔴 SEM INTERNET • dados podem estar desatualizados":"🟡 RECONECTANDO…");return false}
+}
+function stopLive(){if(liveSource){try{liveSource.close()}catch(e){}liveSource=null}}
+function scheduleReconnect(delay=2500){clearTimeout(reconnectTimer);reconnectTimer=setTimeout(()=>{if(document.visibilityState!=="hidden")startLive(true)},delay)}
+function startLive(force=false){
+ if(force)stopLive();
+ if(liveSource && liveSource.readyState!==EventSource.CLOSED)return liveSource;
+ try{
+  const u=CONFIG.databaseURL.replace(/\/$/,"")+"/"+CONFIG.path+".json";
+  const es=new EventSource(u); liveSource=es;
+  es.onopen=()=>{liveLabel("🟢 AO VIVO • sincronizado");refresh()};
+  ["put","patch"].forEach(ev=>es.addEventListener(ev,()=>refresh()));
+  es.onerror=()=>{liveLabel(navigator.onLine===false?"🔴 SEM INTERNET • aguardando conexão":"🟡 RECONECTANDO…");if(es.readyState===EventSource.CLOSED){stopLive();scheduleReconnect()}};
+  return es;
+ }catch(e){liveLabel("🟡 RECONECTANDO…");scheduleReconnect();return null}
+}
+async function wakeUp(){if(document.visibilityState==="hidden")return;liveLabel("🟡 SINCRONIZANDO…");await refresh();startLive(true)}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")wakeUp()});
+window.addEventListener("pageshow",()=>wakeUp());
+window.addEventListener("focus",()=>{if(Date.now()-lastRefreshOk>5000)wakeUp()});
+window.addEventListener("online",()=>wakeUp());
+window.addEventListener("offline",()=>liveLabel("🔴 SEM INTERNET • dados preservados na tela"));
+refresh().then(()=>startLive());
+setInterval(()=>{if(document.visibilityState!=="hidden")refresh()},15000);
+setInterval(()=>{if(document.visibilityState!=="hidden"&&(!liveSource||liveSource.readyState===EventSource.CLOSED))startLive(true)},45000);
 </script></body></html>
